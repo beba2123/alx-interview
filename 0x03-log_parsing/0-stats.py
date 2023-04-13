@@ -1,41 +1,44 @@
 #!/usr/bin/python3
-""" Reads stdin line-by-line and computes metrics """
+
+"""script that reads stdin line by line and computes metrics """
+
 import sys
 
 
-status_codes = {200: 0, 301: 0, 400: 0, 401: 0,
-                403: 0, 404: 0, 405: 0, 500: 0}
-total_size = 0
-counter = 0
+def printStatus(dic, size):
+    """ Prints information """
+    print("File size: {:d}".format(size))
+    for i in sorted(dic.keys()):
+        if dic[i] != 0:
+            print("{}: {:d}".format(i, dic[i]))
 
 
-def get_stats():
-    """ Function to print pre-computed metrics """
-    print("File size: {}".format(total_size))
-    for key, value in sorted(status_codes.items()):
-        if value != 0:
-            print("{}: {}".format(key, value))
+statusCodes = {"200": 0, "301": 0, "400": 0, "401": 0, "403": 0,
+               "404": 0, "405": 0, "500": 0}
+count = 0
+size = 0
+
+try:
+    for line in sys.stdin:
+        if count != 0 and count % 10 == 0:
+            printStatus(statusCodes, size)
+
+        stlist = line.split()
+        count += 1
+
+        try:
+            size += int(stlist[-1])
+        except Exception:
+            pass
+
+        try:
+            if stlist[-2] in statusCodes:
+                statusCodes[stlist[-2]] += 1
+        except Exception:
+            pass
+    printStatus(statusCodes, size)
 
 
-if __name__ == "__main__":
-
-    try:
-        """ try parsing each individual line """
-        for line in sys.stdin:
-            line_args = line.split()
-            if len(line_args) == 9:
-                code = int(line_args[-2])
-                file_size = int(line_args[-1])
-
-                keys = status_codes.keys()
-                if code in keys:
-                    status_codes[code] += 1
-                total_size += file_size
-                counter += 1
-
-            if counter == 10:
-                get_stats()
-                counter = 0
-
-    except KeyboardInterrupt:
-        get_stats()
+except KeyboardInterrupt:
+    printStatus(statusCodes, size)
+    raise

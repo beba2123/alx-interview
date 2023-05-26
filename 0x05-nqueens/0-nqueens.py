@@ -1,127 +1,93 @@
 #!/usr/bin/python3
 """
-File: 0-nqueens.py
-Desc: This python module contains code for solving the n-queens puzzle.
-Author: Anteneh Alem
-Date Created: May 25, 2023
+NQueens Solver
 """
-
 import sys
 
 
-def print_board(board):
-    """ print_board
-    Args:
-        board - list of list with length sys.argv[1]
+def is_valid_position(board, row, col):
+    """Checks if position is valid
     """
-    new_list = []
-    for i, row in enumerate(board):
-        value = []
-        for j, col in enumerate(row):
-            if col == 1:
-                value.append(i)
-                value.append(j)
-        new_list.append(value)
-
-    print(new_list)
-
-
-def isSafe(board, row, col, number):
-    """ isSafe
-    Args:
-        board - list of list with length sys.argv[1]
-        row - row to check if is safe doing a movement in this position
-        col - col to check if is safe doing a movement in this position
-        number: size of the board
-    Return: True of False
-    """
-
-    # Check this row in the left side
-    for i in range(col):
-        if board[row][i] == 1:
-            return False
-
-    # Check upper diagonal on left side
-    for i, j in zip(range(row, -1, -1), range(col, -1, -1)):
-        if board[i][j] == 1:
-            return False
-
-    for i, j in zip(range(row, number, 1), range(col, -1, -1)):
-        if board[i][j] == 1:
-            return False
-
-    return True
-
-
-def solveNQUtil(board, col, number):
-    """ Auxiliar method to find the posibilities of answer
-    Args:
-        board - Board to resolve
-        col - Number of col
-        number - size of the board
-    Returns:
-        All the posibilites to solve the problem
-    """
-
-    if (col == number):
-        print_board(board)
-        return True
-    res = False
-    for i in range(number):
-
-        if (isSafe(board, i, col, number)):
-
-            # Place this queen in board[i][col]
-            board[i][col] = 1
-
-            # Make result true if any placement
-            # is possible
-            res = solveNQUtil(board, col + 1, number) or res
-
-            board[i][col] = 0  # BACKTRACK
-
-    return res
-
-
-def solve(number):
-    """ Find all the posibilities if exists
-    Args:
-        number - size of the board
-    """
-    board = [[0 for i in range(number)]for i in range(number)]
-
-    if not solveNQUtil(board, 0, number):
+    b_size = len(board)
+    if sum(board[row]) or sum([board[i][col] for i in range(b_size)]) != 0:
         return False
 
+    for i, j in [(1, 1), (-1, -1), (1, -1), (-1, 1)]:
+        r, c = row, col
+        while 0 <= r + i < b_size and 0 <= c + j < b_size:
+            r, c = r + i, c + j
+            if board[r][c]:
+                return False
     return True
 
 
-def validate(args):
-    """ Validate the input data to verify if the size to
-        answer is posible
+def place_next_queen(board, row):
+    """Places a queen on the board at a valid position if not return False
+    """
+    st, end = 0, len(board)
+    if sum(board[row]) == 1:
+        st = board[row].index(1) + 1
+        board[row] = [0 for col in range(end)]
+
+    for col in range(st, end):
+        if is_valid_position(board, row, col):
+            board[row][col] = 1
+            return True
+    return False
+
+
+def solve_nqueens(board, solutions=[]):
+    """Solves the nqueens problem
+
     Args:
-        args - sys.argv
+        n (int): size of board
     """
-    if (len(args) == 2):
-        # Validate data
-        try:
-            number = int(args[1])
-        except Exception:
-            print("N must be a number")
-            exit(1)
-        if number < 4:
-            print("N must be at least 4")
-            exit(1)
-        return number
-    else:
+    n = len(board)
+    row = 0
+    while row < n:
+        if place_next_queen(board, row):
+            row += 1
+        else:
+            if row - 1 < 0:
+                break
+            row -= 1
+        if row == n:
+            solutions.append([[row, board[row].index(1)] for row in range(n)])
+            row -= 1
+
+    if row == 0:
+        return
+
+    solutions.append([[row, board[row].index(1)] for row in range(n)])
+    idx = board[0].index(1)
+    if idx > -1:
+        board = [[0 for _ in range(n)] for row in range(n)]
+        board[0][idx] = 1
+        solve_nqueens(board, solutions)
+
+
+def run_solver(n):
+    """Runs the solver
+    """
+    board = [[0 for col in range(n)] for row in range(n)]
+    solutions = []
+    solve_nqueens(board, solutions)
+    for row in solutions:
+        print(row)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
         print("Usage: nqueens N")
-        exit(1)
+        sys.exit(1)
 
+    try:
+        n = int(sys.argv[1])
+        if n < 4:
+            print('N must be at least 4')
+            sys.exit(1)
+        run_solver(n)
 
-if __name__ == "__main__":
-    """ Main method to execute the application
-    """
-
-    number = validate(sys.argv)
-    solve(number)
-
+    except ValueError:
+        print('N must be a number')
+        sys.exit(1)
